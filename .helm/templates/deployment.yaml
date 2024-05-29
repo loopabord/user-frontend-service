@@ -15,5 +15,10 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-{{ .Release.Name }}
           image: {{ .Values.image.url }}
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
       imagePullSecrets:
         - name: {{ .Chart.Name }}-{{ .Release.Name }}-credentials
