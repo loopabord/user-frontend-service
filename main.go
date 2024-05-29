@@ -133,6 +133,8 @@ func main() {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			// Allow specific headers
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, connect-protocol-version")
+			// Allow specific methods
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			// Handle preflight requests
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
