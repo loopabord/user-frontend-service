@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "userfrontendservice/gen/user/v1;userv1";
+
+service UserFrontendService {
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+    rpc ReadUser(ReadUserRequest) returns (ReadUserResponse);
+    rpc ReadAllUsers(ReadAllUsersRequest) returns (ReadAllUsersResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+message CreateUserRequest {
+    User user = 1;
+}
+
+message CreateUserResponse {
+    string id = 1;
+}
+
+message ReadUserRequest {
+    string id = 1;
+}
+
+message ReadUserResponse {
+    User user = 1;
+}
+
+message ReadAllUsersRequest {
+}
+
+message ReadAllUsersResponse {
+    repeated User users = 1;
+}
+
+message UpdateUserRequest {
+    User user = 1;
+}
+
+message UpdateUserResponse {
+    // Empty response for UpdateUser RPC
+}
+
+message DeleteUserRequest {
+    string id = 1;
+}
+
+message DeleteUserResponse {
+    // Empty response for DeleteUser RPC
+}
+
+message User {
+    string id = 1;
+    string name = 2;
+    google.protobuf.Timestamp created_at = 3;
+}

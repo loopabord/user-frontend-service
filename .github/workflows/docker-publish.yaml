@@ -1,0 +1,131 @@
+on: 
+  push:
+    branches:
+      - main
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  release-on-push:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    permissions:
+      contents: write
+      pull-requests: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - id: release
+        uses: rymndhng/release-on-push-action@master
+        with:
+          bump_version_scheme: minor
+      - name: Check Output Parameters
+        run: |
+          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
+          echo "Got release version ${{ steps.release.outputs.version }}"
+  build:
+    needs: release-on-push
+    outputs:
+      url: ${{ steps.registry_slug.outputs.lowercase }}
+      version: ${{ needs.release-on-push.outputs.version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - id: registry_slug
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.release-on-push.outputs.version }}
+      - name: check url
+        run: echo ${{ steps.registry_slug.outputs.lowercase }}
+
+      # Install the cosign tool except on PR
+      # https://github.com/sigstore/cosign-installer
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3.5.0
+
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@79abd3f86f79a9d68a23c75a09a9a85889262adf
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      # - name: Extract Docker metadata
+      #   id: meta
+      #   uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      #   with:
+      #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.registry_slug.outputs.lowercase }}
+
+      # Sign the resulting Docker image digest except on PRs.
+      # This will only write to the public Rekor transparency log when the Docker
+      # repository is public to avoid leaking data.  If you would like to publish
+      # transparency data even for private images, pass --force to cosign below.
+      # https://github.com/sigstore/cosign
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        # This step uses the identity token to provision an ephemeral certificate
+        # against the sigstore community Fulcio instance.
+        run: cosign sign ${{ steps.registry_slug.outputs.lowercase }}
+  deployment:
+    needs: build
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v1
+      - name: lowercase github.repository
+        run: |
+          echo "IMAGE_NAME=`echo ${{github.event.repository.name}} | tr '[:upper:]' '[:lower:]'`" >>${GITHUB_ENV}
+      - name: Prep helm chart
+        run: |
+          mv ./.helm/Chart.yaml ./.helm/Chart.old.yaml
+          cat ./.helm/Chart.old.yaml | grep -v appVersion > ./.helm/Chart.yaml
+          echo -e "\r\nappVersion: ${{ needs.build.outputs.version }}\r\n" >> ./.helm/Chart.yaml
+          cat ./.helm/Chart.yaml
+      - name: Deploy
+        uses: WyriHaximus/github-action-helm3@v2
+        with:
+          exec: >
+            helm upgrade ${{ env.IMAGE_NAME }} ./.helm/ 
+            --install --wait --atomic --namespace=loopabord 
+            --create-namespace 
+            --set=app.name=${{ env.IMAGE_NAME }} 
+            --set=imageCredentials.registry=${{ secrets.IMAGECREDENTIALS_REGISTRY }} 
+            --set=imageCredentials.username=${{ secrets.IMAGECREDENTIALS_USERNAME }} 
+            --set=imageCredentials.password=${{ secrets.IMAGECREDENTIALS_PASSWORD }} 
+            --set=image.url=${{ needs.build.outputs.url }} 
+            --set=env[0].name=NATS_URL --set=env[0].value=${{ secrets.NATS_URL }}
+            --timeout 1m0s
+          kubeconfig: '${{ secrets.KUBECONFIG }}'
