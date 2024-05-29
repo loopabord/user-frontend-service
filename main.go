@@ -113,6 +113,7 @@ func (p *UserServer) UpdateUser(ctx context.Context, req *connect.Request[userv1
 
 func main() {
 	natsURL := os.Getenv("NATS_URL")
+	log.Println(natsURL)
 
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
