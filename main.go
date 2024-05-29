@@ -132,12 +132,6 @@ func main() {
 			// Allow requests from any origin
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 
-			// Allow GET, POST, OPTIONS methods
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-
-			// Allow specific headers
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
 			// Handle preflight requests
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
