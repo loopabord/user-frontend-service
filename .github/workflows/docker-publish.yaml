@@ -127,5 +127,6 @@ jobs:
             --set=imageCredentials.password=${{ secrets.IMAGECREDENTIALS_PASSWORD }} 
             --set=image.url=${{ needs.build.outputs.url }} 
             --set=env[0].name=NATS_URL --set=env[0].value=${{ secrets.NATS_URL }}
+            --set=env[1].name=PORT --set=env[1].value=${{ secrets.PORT }}
             --timeout 1m0s
           kubeconfig: '${{ secrets.KUBECONFIG }}'
