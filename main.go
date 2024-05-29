@@ -131,7 +131,8 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Allow requests from any origin
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-
+			// Allow specific headers
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, connect-protocol-version")
 			// Handle preflight requests
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
