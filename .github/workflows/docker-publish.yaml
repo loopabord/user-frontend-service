@@ -128,5 +128,9 @@ jobs:
             --set=image.url=${{ needs.build.outputs.url }} 
             --set=env[0].name=NATS_URL --set=env[0].value=${{ secrets.NATS_URL }}
             --set=env[1].name=PORT --set=env[1].value=${{ secrets.PORT }}
+            --set=env[2].name=AUTH0_API_IDENTIFIER --set=env[2].value=${{ secrets.AUTH0_API_IDENTIFIER }}
+            --set=env[3].name=AUTH0_AUDIENCE --set=env[3].value=${{ secrets.AUTH0_AUDIENCE }}
+            --set=env[4].name=AUTH0_CLIENT_SECRET --set=env[4].value=${{ secrets.AUTH0_CLIENT_SECRET }}
+            --set=env[5].name=AUTH0_DOMAIN --set=env[5].value=${{ secrets.AUTH0_DOMAIN }}
             --timeout 1m0s
           kubeconfig: '${{ secrets.KUBECONFIG }}'
