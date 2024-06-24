@@ -105,16 +105,16 @@ func (p *UserServer) UpdateUser(ctx context.Context, req *connect.Request[userv1
 	}
 
 	// Accessing 'sub' from context
-	token, ok := ctx.Value("user").(*jwt.Token)
-	if !ok {
-		return nil, errors.New("unable to retrieve JWT token from context")
-	}
-	claims := token.Claims.(jwt.MapClaims)
-	sub := claims["sub"].(string)
+	// token, ok := ctx.Value("user").(*jwt.Token)
+	// if !ok {
+	// 	return nil, errors.New("unable to retrieve JWT token from context")
+	// }
+	// claims := token.Claims.(jwt.MapClaims)
+	// sub := claims["sub"].(string)
 
-	if sub != updatedUser.Id {
-		return nil, errors.New("unauthorized")
-	}
+	// if sub != updatedUser.Id {
+	// 	return nil, errors.New("unauthorized")
+	// }
 
 	var originalUserData []byte
 	originalUserData = append(originalUserData, msg.Data...)
