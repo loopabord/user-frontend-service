@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	userv1 "userfrontendservice/gen/user/v1"
 	"userfrontendservice/gen/user/v1/userv1connect"
 
@@ -220,18 +219,12 @@ func main() {
 	// Handle CORS headers
 	corsWrapper := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Allow requests from any origin dynamically based on the request
-			allowedOrigins := "https://loopabord.nl, http://localhost:5173"
-			origin := r.Header.Get("Origin")
-			if strings.Contains(allowedOrigins, origin) {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-			}
+			// Allow requests from any origin
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			// Allow specific headers
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, connect-protocol-version")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Connect-Protocol-Version")
 			// Allow specific methods
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			// Allow credentials
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			// Handle preflight requests
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
