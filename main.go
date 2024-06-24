@@ -19,7 +19,6 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/form3tech-oss/jwt-go"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -248,46 +247,46 @@ func main() {
 	corsHandler := corsWrapper(mux)
 
 	// Create the authentication middleware
-	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			claims := token.Claims.(jwt.MapClaims)
-			for key, value := range claims {
-				fmt.Printf("Claim[%s]: %v\n", key, value)
-			}
+	// jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+	// 	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+	// 		claims := token.Claims.(jwt.MapClaims)
+	// 		for key, value := range claims {
+	// 			fmt.Printf("Claim[%s]: %v\n", key, value)
+	// 		}
 
-			// aud := os.Getenv("AUTH0_API_IDENTIFIER")
-			// checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
-			// if !checkAud {
-			// 	return token, errors.New("Invalid audience.")
-			// }
+	// 		// aud := os.Getenv("AUTH0_API_IDENTIFIER")
+	// 		// checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
+	// 		// if !checkAud {
+	// 		// 	return token, errors.New("Invalid audience.")
+	// 		// }
 
-			iss := "https://" + os.Getenv("AUTH0_DOMAIN") + "/"
-			checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
-			if !checkIss {
-				return token, errors.New("Invalid issuer.")
-			}
+	// 		iss := "https://" + os.Getenv("AUTH0_DOMAIN") + "/"
+	// 		checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
+	// 		if !checkIss {
+	// 			return token, errors.New("Invalid issuer.")
+	// 		}
 
-			cert, err := getPemCert(token)
-			if err != nil {
-				return nil, err
-			}
-			return jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
-		},
-		SigningMethod: jwt.SigningMethodRS256,
-		Extractor: func(r *http.Request) (string, error) {
-			cookie, err := r.Cookie("token")
-			if err != nil {
-				return "", err
-			}
-			return cookie.Value, nil
-		},
-	})
+	// 		cert, err := getPemCert(token)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		return jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+	// 	},
+	// 	SigningMethod: jwt.SigningMethodRS256,
+	// 	Extractor: func(r *http.Request) (string, error) {
+	// 		cookie, err := r.Cookie("token")
+	// 		if err != nil {
+	// 			return "", err
+	// 		}
+	// 		return cookie.Value, nil
+	// 	},
+	// })
 
-	// Apply the JWT middleware to the mux
-	protectedHandler := jwtMiddleware.Handler(corsHandler)
+	// // Apply the JWT middleware to the mux
+	// protectedHandler := jwtMiddleware.Handler(corsHandler)
 
 	// Start server
-	http.ListenAndServe("0.0.0.0:8080", h2c.NewHandler(protectedHandler, &http2.Server{}))
+	http.ListenAndServe("0.0.0.0:8080", h2c.NewHandler(corsHandler, &http2.Server{}))
 }
 
 // Helper function to fetch the JWT's signing certificate
